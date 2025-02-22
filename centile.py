@@ -9,9 +9,13 @@ from qgis.core import (
 )
 import numpy as np
 
+raster_layer.dataProvider().reloadData()
+
+QgsProject.instance().blockSignals(True)
 # Load your vector and raster layers (make sure they're already in your QGIS project)
-vector_layer = QgsProject.instance().mapLayersByName("testing")[0]
-raster_layer = QgsProject.instance().mapLayersByName("Coppers_field_LIDAR-2024-08-01")[0]
+vector_layer = QgsProject.instance().mapLayersByName("james_plots")[0]
+raster_layer = QgsProject.instance().mapLayersByName("canopyp1_resized")[0]
+QgsProject.instance().blockSignals(False)
 
 if not vector_layer or not raster_layer:
     raise Exception("Ensure both the vector and raster layers are loaded in the project and have correct names.")
@@ -78,5 +82,11 @@ for feature in vector_layer.getFeatures():
                 mask[y, x] = False
 
     masked_array = np.ma.array(raster_values, mask=mask)
-    quartile = np.percentile(masked_array.compressed(), 99)
-    print(quartile)
+    compressed_values = masked_array.compressed()
+    if compressed_values.size == 0:
+        print(f"Feature {feature.id()}: No valid raster values inside polygon.")
+        continue
+    
+    
+    quartile = np.nanpercentile(compressed_values, 99)
+    print(feature.id(),quartile)
